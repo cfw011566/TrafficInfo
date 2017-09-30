@@ -45,10 +45,16 @@ class APIController {
         self.delegate = delegate
     }
     
-    func getTrafficInfo() {
-//        let urlPath = "http://210.69.35.216/data/api/pbs"
-        let urlPath = "http://od.moi.gov.tw/data/api/pbs"
+    func getTrafficInfo(urlIndex: Int) {
+//        let urlPath1 = "http://210.69.35.216/data/api/pbs"
+//        let urlPath0 = "http://od.moi.gov.tw/data/api/pbs"
 //        let urlPath = "http://service.partime-match.com/pbs"
+        var urlPath = ""
+        if urlIndex == 0 {
+            urlPath = "http://od.moi.gov.tw/data/api/pbs"
+        } else {
+            urlPath = "http://210.69.35.216/data/api/pbs"
+        }
         let url = URL(string: urlPath)
         let session = URLSession.shared
         let task = session.dataTask(with: url!, completionHandler: { data, response, error -> Void in

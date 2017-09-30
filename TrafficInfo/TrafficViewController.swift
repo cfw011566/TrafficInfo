@@ -35,6 +35,8 @@ enum PreferenceKey: String {
     case LongTermTrafficOn = "LongTermTrafficOn"
 }
 
+var urlIndex = 0
+
 class TrafficViewController: UIViewController, UIPopoverPresentationControllerDelegate {
 
     @IBOutlet weak var mapView: GMSMapView!
@@ -119,7 +121,7 @@ class TrafficViewController: UIViewController, UIPopoverPresentationControllerDe
 
         api = APIController(delegate: self)
         UIApplication.shared.isNetworkActivityIndicatorVisible = true
-        api.getTrafficInfo()
+        api.getTrafficInfo(urlIndex: urlIndex)
         
 //        self.navigationController?.hidesBarsOnTap = true
         
@@ -292,7 +294,7 @@ class TrafficViewController: UIViewController, UIPopoverPresentationControllerDe
     
     // MARK: NavBarButton selector
     
-    func switchView(_ sender: UIButton) {
+    @objc func switchView(_ sender: UIButton) {
         if self.viewType == .viewMap {
             self.viewType = .viewTable
         } else {
@@ -304,7 +306,7 @@ class TrafficViewController: UIViewController, UIPopoverPresentationControllerDe
         userDefaults.set(self.viewType.rawValue, forKey: PreferenceKey.CurrentViewType.rawValue)
     }
     
-    func getTrafficData(_ sender: UIBarButtonItem) {
+    @objc func getTrafficData(_ sender: UIBarButtonItem) {
         getCurrentTrafficData()
         
         // Google Analytics
@@ -314,7 +316,7 @@ class TrafficViewController: UIViewController, UIPopoverPresentationControllerDe
 
     }
     
-    func searchTraffic(_ sender: UIBarButtonItem) {
+    @objc func searchTraffic(_ sender: UIBarButtonItem) {
         self.tableView.contentOffset = CGPoint.zero
         self.tableView.tableHeaderView = self.searchController.searchBar
         self.searchController.searchBar.becomeFirstResponder()
@@ -350,7 +352,7 @@ class TrafficViewController: UIViewController, UIPopoverPresentationControllerDe
         return .none
     }
     
-    func settingPopover(_ sender: UIButton) {
+    @objc func settingPopover(_ sender: UIButton) {
         let settingVC: SettingViewController = self.storyboard?.instantiateViewController(withIdentifier: "SettingViewController") as! SettingViewController
         settingVC.modalPresentationStyle = .popover
         settingVC.preferredContentSize = CGSize(width: 300, height: 250)
@@ -368,15 +370,15 @@ class TrafficViewController: UIViewController, UIPopoverPresentationControllerDe
         present(settingVC, animated: true, completion: nil)
     }
     
-    func displayInfo(_ sender: UIButton) {
+    @objc func displayInfo(_ sender: UIButton) {
         self.performSegue(withIdentifier: "AttributionInfo", sender: tableView)
     }
     
-    func segmentRegionChanged(_ sender: UISegmentedControl) {
+    @objc func segmentRegionChanged(_ sender: UISegmentedControl) {
         setRegionWithIndex(segmentRegion.selectedSegmentIndex)
     }
     
-    func segmentIntervalChanged(_ sender: UISegmentedControl) {
+    @objc func segmentIntervalChanged(_ sender: UISegmentedControl) {
         setIntervalWithIndex(segmentInterval.selectedSegmentIndex)
     }
     
@@ -388,7 +390,7 @@ class TrafficViewController: UIViewController, UIPopoverPresentationControllerDe
         if timeInterval > kRefreshInterval {
             lastRefresh = nowDateTime
             UIApplication.shared.isNetworkActivityIndicatorVisible = true
-            api.getTrafficInfo()
+            api.getTrafficInfo(urlIndex: urlIndex)
             if self.trafficData.count > 0 {
                 self.tableView.contentOffset = CGPoint.zero
             }
@@ -576,11 +578,17 @@ extension TrafficViewController: APIControllerProtocol {
     
     func cannotConnect(_ errorMessage: String) {
         let myTitle = "無法取得資料"
-        let myMessage = "請確認網路連線狀態"
+        let myMessage = "請確認網路連線狀態或\n重新整理一次(切換到備援服務器)"
         let alert = UIAlertController(title: myTitle, message: myMessage + "\n" + errorMessage, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
         self.present(alert, animated: true, completion: nil)
         UIApplication.shared.isNetworkActivityIndicatorVisible = false
+        if urlIndex == 0 {
+            urlIndex = 1
+        } else {
+            urlIndex = 0
+        }
+        lastRefresh = Date(timeIntervalSinceNow: 0)
     }
 
 }
